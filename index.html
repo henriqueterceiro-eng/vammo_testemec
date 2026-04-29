@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAMMO — Avaliador de Candidatos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&family=Barlow+Condensed:wght@700;900&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2EC2FF;--black:#111;--white:#fff;--gray:#666;
+  --border:#E0E0E0;--bg:#F5F5F5;--bg2:#EBEBEB;
+  --green:#16A34A;--red:#DC2626;--amber:#D97706;
+  --font:'Barlow',sans-serif;--font-cond:'Barlow Condensed',sans-serif;
+}
+body{background:#F0F0F0;color:var(--black);font-family:var(--font);min-height:100vh}
+
+/* LAYOUT */
+.app{max-width:860px;margin:0 auto;padding:24px 16px 60px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:0 0 20px;border-bottom:2px solid var(--black);margin-bottom:28px}
+.header-sub{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gray)}
+
+/* CARD */
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-title{font-family:var(--font-cond);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--black);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:3px;height:16px;background:var(--blue);border-radius:2px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* INPUTS */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray)}
+.field input,.field select{
+  background:#fff;border:1px solid var(--border);
+  border-radius:8px;color:var(--black);font-family:var(--font);
+  font-size:14px;padding:10px 12px;outline:none;
+  transition:border-color .2s;
+  -webkit-appearance:none;appearance:none;
+}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.field select option{background:#fff;color:var(--black)}
+
+/* TIPO PROVA TOGGLE */
+.prova-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
+.prova-btn{
+  background:#F5F5F5;border:2px solid #E0E0E0;
+  border-radius:10px;padding:14px 12px;cursor:pointer;
+  text-align:center;transition:all .2s;
+}
+.prova-btn:hover{border-color:#999}
+.prova-btn.active{border-color:var(--blue);background:rgba(46,194,255,.08)}
+.prova-btn .pb-title{font-family:var(--font-cond);font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--black)}
+.prova-btn .pb-sub{font-size:11px;color:var(--gray);margin-top:3px}
+.prova-btn.active .pb-title{color:var(--blue)}
+
+/* QUESTÕES */
+.questions-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:600px){.questions-grid{grid-template-columns:1fr 1fr}}
+.q-item{background:#F5F5F5;border:1px solid #E0E0E0;border-radius:8px;padding:10px 12px}
+.q-num{font-family:var(--font-cond);font-size:11px;font-weight:700;color:var(--gray);margin-bottom:6px;letter-spacing:1px}
+.q-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.q-opt{
+  background:#E8E8E8;border:1.5px solid transparent;
+  border-radius:5px;padding:5px 0;cursor:pointer;
+  font-family:var(--font-cond);font-size:13px;font-weight:700;
+  color:#666;text-align:center;transition:all .15s;
+}
+.q-opt:hover{color:var(--black);border-color:#999}
+.q-opt.selected{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* APROVAÇÃO */
+.aprov-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.aprov-btn{
+  padding:16px;border-radius:10px;cursor:pointer;
+  border:2px solid #E0E0E0;background:#F5F5F5;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-cond);font-size:17px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:#999;
+  transition:all .2s;
+}
+.aprov-btn:hover{border-color:#999}
+.aprov-btn.aprovado.active{border-color:var(--green);background:rgba(22,163,74,.08);color:var(--green)}
+.aprov-btn.reprovado.active{border-color:var(--red);background:rgba(220,38,38,.08);color:var(--red)}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot-green{background:var(--green)}
+.dot-red{background:var(--red)}
+
+/* RESULTADO */
+.result-card{background:#fff;border:1px solid #E0E0E0;border-radius:12px;padding:24px;margin-bottom:16px;display:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.result-card.show{display:block}
+
+.score-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.score-box{background:#F5F5F5;border:1px solid #E0E0E0;border-radius:8px;padding:14px;text-align:center}
+.score-num{font-family:var(--font-cond);font-size:32px;font-weight:900;line-height:1;color:var(--black)}
+.score-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-top:4px}
+.score-num.ok{color:var(--green)}
+.score-num.warn{color:var(--amber)}
+.score-num.bad{color:var(--red)}
+
+.profile-section{margin-bottom:18px}
+.profile-section h4{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:10px}
+
+.insight-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#F5F5F5;border:1px solid #E0E0E0;
+  border-radius:20px;padding:4px 12px;
+  font-size:12px;font-weight:600;color:var(--black);
+  margin:3px;
+}
+.tag-green{border-color:rgba(22,163,74,.4);color:var(--green);background:rgba(22,163,74,.06)}
+.tag-amber{border-color:rgba(217,119,6,.4);color:var(--amber);background:rgba(217,119,6,.06)}
+.tag-red{border-color:rgba(220,38,38,.4);color:var(--red);background:rgba(220,38,38,.06)}
+.tag-blue{border-color:rgba(46,194,255,.4);color:var(--blue);background:rgba(46,194,255,.06)}
+
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;font-weight:600;color:var(--black);min-width:130px}
+.bar-bg{flex:1;height:8px;background:#E8E8E8;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.bar-score{font-family:var(--font-cond);font-size:13px;font-weight:700;color:var(--gray);min-width:32px;text-align:right}
+
+.verdict{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;border-radius:10px;margin-top:16px;
+}
+.verdict.aprovado{background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.25)}
+.verdict.reprovado{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25)}
+.verdict .v-icon{font-size:24px}
+.verdict .v-text{font-family:var(--font-cond);font-size:20px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+.verdict.aprovado .v-text{color:var(--green)}
+.verdict.reprovado .v-text{color:var(--red)}
+
+/* SLACK POST */
+.slack-wrap{background:#fff;border:1px solid #E0E0E0;border-radius:12px;padding:24px;margin-bottom:16px;display:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.slack-wrap.show{display:block}
+.slack-preview{
+  background:#1A1D21;border:1px solid #333;border-radius:8px;
+  padding:16px;font-family:'Courier New',monospace;font-size:13px;
+  line-height:1.7;color:#D1D2D3;white-space:pre-wrap;word-break:break-word;
+  max-height:400px;overflow-y:auto;margin-bottom:14px;
+}
+.slack-preview b{color:#fff;font-weight:700}
+
+.btn-copy{
+  background:var(--blue);color:#fff;
+  font-family:var(--font-cond);font-size:15px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border:none;
+  border-radius:8px;padding:12px 28px;cursor:pointer;
+  transition:background .2s,transform .1s;display:inline-flex;align-items:center;gap:8px;
+}
+.btn-copy:hover{background:#1aaee8}
+.btn-copy:active{transform:scale(.98)}
+.btn-copy.copied{background:var(--green);color:#fff}
+
+/* GERAR BTN */
+.btn-gerar{
+  width:100%;background:var(--black);color:#fff;
+  font-family:var(--font-cond);font-size:18px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border:none;
+  border-radius:10px;padding:16px;cursor:pointer;
+  transition:background .2s,opacity .2s;margin-top:8px;
+}
+.btn-gerar:hover{background:#333}
+.btn-gerar:disabled{opacity:.4;cursor:not-allowed}
+
+.obs-field{width:100%;background:#fff;border:1px solid #E0E0E0;border-radius:8px;color:var(--black);font-family:var(--font);font-size:13px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s}
+.obs-field:focus{border-color:var(--blue)}
+
+/* LOG */
+.log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.log-count{font-size:12px;font-weight:700;color:var(--gray);background:#F0F0F0;border-radius:20px;padding:3px 10px}
+.log-empty{text-align:center;padding:32px;color:var(--gray);font-size:13px}
+.log-item{
+  border:1px solid #E8E8E8;border-radius:10px;padding:14px 16px;
+  margin-bottom:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;
+  background:#fff;
+}
+.log-item:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(46,194,255,.12)}
+.log-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.log-nome{font-weight:700;font-size:14px;color:var(--black)}
+.log-meta{font-size:11px;color:var(--gray)}
+.log-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.log-badge{font-family:var(--font-cond);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase}
+.lb-aprov{background:rgba(22,163,74,.1);color:var(--green);border:1px solid rgba(22,163,74,.25)}
+.lb-reprov{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.25)}
+.lb-nota{background:#F0F0F0;color:var(--black);border:1px solid #E0E0E0}
+.lb-base{background:rgba(46,194,255,.08);color:#0099cc;border:1px solid rgba(46,194,255,.25)}
+.lb-prova{background:#F5F0FF;color:#7C3AED;border:1px solid rgba(124,58,237,.25)}
+.log-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .15s,background .15s;flex-shrink:0}
+.log-del:hover{color:var(--red);background:rgba(220,38,38,.08)}
+.log-detail{
+  margin-top:10px;padding-top:10px;border-top:1px solid #F0F0F0;
+  display:none;font-size:12px;color:#555;line-height:1.6;
+}
+.log-detail.open{display:block}
+.log-detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.log-detail-box{background:#F8F8F8;border-radius:6px;padding:8px;text-align:center}
+.log-detail-num{font-family:var(--font-cond);font-size:20px;font-weight:900}
+.log-detail-lbl{font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.btn-clear-log{background:none;border:1px solid #E0E0E0;color:var(--gray);font-family:var(--font);font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .15s}
+.btn-clear-log:hover{border-color:var(--red);color:var(--red)}
+.btn-toggle-log{
+  background:#F5F5F5;border:1px solid #E0E0E0;color:var(--black);
+  font-family:var(--font-cond);font-size:14px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;padding:12px 20px;border-radius:10px;cursor:pointer;
+  width:100%;transition:all .2s;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-toggle-log:hover{background:#EBEBEB}
+.log-section{display:none}
+.log-section.open{display:block}
+
+/* IMPORTAR FOTO */
+.photo-card{background:linear-gradient(135deg,rgba(46,194,255,.08),rgba(46,194,255,.02));border:1px dashed rgba(46,194,255,.5)}
+.photo-btn{
+  width:100%;background:var(--blue);color:#fff;
+  font-family:var(--font-cond);font-size:16px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border:none;
+  border-radius:10px;padding:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:background .2s,transform .1s;
+}
+.photo-btn:hover{background:#1aaee8}
+.photo-btn:active{transform:scale(.99)}
+.photo-btn:disabled{opacity:.5;cursor:not-allowed}
+.photo-status{margin-top:10px;font-size:12px;color:var(--gray);text-align:center;min-height:18px;font-weight:600}
+.photo-status.error{color:var(--red)}
+.photo-status.success{color:var(--green)}
+.photo-status.loading{color:var(--blue)}
+.photo-config{display:flex;justify-content:center;margin-top:6px}
+.photo-config a{font-size:11px;color:var(--gray);text-decoration:none;cursor:pointer}
+.photo-config a:hover{color:var(--blue);text-decoration:underline}
+
+.api-key-setup{
+  background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;
+  padding:14px;margin-top:12px;font-size:12px;display:none;line-height:1.5;
+}
+.api-key-setup.show{display:block}
+.api-key-setup b{color:#7A5800}
+.api-key-setup input{width:100%;font-family:'Courier New',monospace;font-size:11px;padding:8px 10px;border:1px solid #E0E0E0;border-radius:6px;margin-top:8px;outline:none}
+.api-key-setup input:focus{border-color:var(--blue)}
+.api-key-setup .ak-row{display:flex;gap:6px;margin-top:8px}
+.api-key-setup button{font-family:var(--font-cond);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;flex:1}
+.ak-save{background:var(--blue);color:#fff}
+.ak-save:hover{background:#1aaee8}
+.ak-cancel{background:#E0E0E0;color:var(--black)}
+.ak-cancel:hover{background:#ccc}
+.ak-link{color:var(--blue);font-weight:600;text-decoration:none}
+.ak-link:hover{text-decoration:underline}
+
+.spinner{
+  display:inline-block;width:14px;height:14px;border:2px solid #cce8f5;
+  border-top-color:var(--blue);border-radius:50%;
+  animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* AVALIADOR */
+.avaliador-row{display:flex;gap:6px;align-items:stretch}
+.avaliador-row select{flex:1}
+.btn-add-avaliador{
+  background:#F5F5F5;border:1px solid var(--border);color:var(--black);
+  font-family:var(--font);font-size:13px;font-weight:600;
+  padding:0 14px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;gap:4px;
+  transition:all .15s;white-space:nowrap;
+}
+.btn-add-avaliador:hover{border-color:var(--blue);color:var(--blue);background:rgba(46,194,255,.04)}
+.lb-avaliador{background:#FFF4E0;color:#B45309;border:1px solid rgba(180,83,9,.25)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div>
+      <img src="data:image/png;base64,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" style="height:36px;display:block" alt="Vammo">
+      <div class="header-sub">Avaliador de Candidatos</div>
+    </div>
+  </div>
+
+  <!-- IMPORTAR FOTO -->
+  <div class="card photo-card">
+    <div class="card-title">Importar Prova por Foto</div>
+    <button class="photo-btn" onclick="iniciarFoto()">
+      <span style="font-size:20px">📸</span>
+      <span>Tirar foto / Enviar imagem da prova</span>
+    </button>
+    <div class="photo-status" id="photo-status">Preencha automaticamente fotografando a folha de respostas</div>
+    <div class="photo-config"><a id="config-link" onclick="resetApiKey()" style="display:none">⚙️ Trocar chave de API</a></div>
+    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="processarFoto(event)">
+
+    <div class="api-key-setup" id="api-key-setup">
+      <div><b>⚙️ Configuração inicial (1x só)</b></div>
+      <div style="margin-top:4px">Cole sua chave do <b>Google AI Studio</b>. Pegue grátis (sem cartão) em <a href="https://aistudio.google.com/apikey" target="_blank" class="ak-link">aistudio.google.com/apikey</a> → "Create API key".</div>
+      <input type="password" id="api-key-input" placeholder="AIza..." autocomplete="off">
+      <div class="ak-row">
+        <button class="ak-save" onclick="salvarApiKey()">Salvar e continuar</button>
+        <button class="ak-cancel" onclick="cancelarApiKey()">Cancelar</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#888">🔒 A chave fica salva só no seu navegador (localStorage). Não vai pra lugar nenhum.</div>
+    </div>
+  </div>
+
+  <!-- DADOS DO CANDIDATO -->
+  <div class="card">
+    <div class="card-title">Dados do Candidato</div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Avaliador responsável</label>
+      <div class="avaliador-row">
+        <select id="avaliador">
+          <option value="">Selecione quem está avaliando...</option>
+        </select>
+        <button type="button" class="btn-add-avaliador" onclick="adicionarAvaliador()" title="Adicionar novo avaliador">+ Pessoa</button>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="field"><label>Nome completo</label><input type="text" id="nome" placeholder="Nome do candidato"></div>
+      <div class="field"><label>WhatsApp</label><input type="text" id="wpp" placeholder="(11) 9xxxx-xxxx"></div>
+    </div>
+    <div class="grid-3" style="margin-bottom:12px">
+      <div class="field"><label>E-mail</label><input type="email" id="email" placeholder="email@exemplo.com"></div>
+      <div class="field">
+        <label>Turno de preferência</label>
+        <select id="turno">
+          <option value="">Selecione...</option>
+          <option value="1º Turno">1º Turno</option>
+          <option value="2º Turno">2º Turno</option>
+          <option value="Ambos">Ambos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Base</label>
+        <select id="base">
+          <option value="">Selecione...</option>
+          <option value="Mooca">Mooca</option>
+          <option value="Osasco">Osasco</option>
+          <option value="São Bernardo">São Bernardo</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPO DE PROVA -->
+  <div class="card">
+    <div class="card-title">Tipo de Prova</div>
+    <div class="prova-toggle">
+      <div class="prova-btn active" id="btn-perfil" onclick="setProva('perfil')">
+        <div class="pb-title">Avaliação de Perfil</div>
+        <div class="pb-sub">Candidato sem experiência · Comportamental</div>
+      </div>
+      <div class="prova-btn" id="btn-tecnica" onclick="setProva('tecnica')">
+        <div class="pb-title">Prova Técnica</div>
+        <div class="pb-sub">Mecânico experiente · Conhecimentos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESPOSTAS -->
+  <div class="card">
+    <div class="card-title">Respostas do Candidato</div>
+    <div class="questions-grid" id="questions-grid"></div>
+  </div>
+
+  <!-- OBSERVAÇÕES -->
+  <div class="card">
+    <div class="card-title">Observações da Entrevista</div>
+    <div class="field">
+      <label>Anotações livres (impressões, pontos de atenção...)</label>
+      <textarea class="obs-field" id="obs" placeholder="Ex: Candidato demonstrou interesse alto, boa comunicação, chegou no horário..."></textarea>
+    </div>
+  </div>
+
+  <!-- APROVAÇÃO -->
+  <div class="card">
+    <div class="card-title">Decisão</div>
+    <div class="aprov-row">
+      <div class="aprov-btn aprovado" id="btn-aprov" onclick="setDecisao('aprovado')">
+        <div class="dot dot-green"></div>APROVADO
+      </div>
+      <div class="aprov-btn reprovado" id="btn-reprov" onclick="setDecisao('reprovado')">
+        <div class="dot dot-red"></div>REPROVADO
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-gerar" onclick="gerar()">Gerar Análise e Post do Slack →</button>
+
+  <!-- RESULTADO -->
+  <div class="result-card" id="result-card">
+    <div class="card-title">Análise do Candidato</div>
+    <div class="score-row" id="score-row"></div>
+    <div class="profile-section">
+      <h4>Pontuação por bloco</h4>
+      <div id="bars"></div>
+    </div>
+    <div class="profile-section">
+      <h4>Perfil identificado</h4>
+      <div id="tags"></div>
+    </div>
+    <div class="profile-section">
+      <h4>Análise detalhada</h4>
+      <div id="analise" style="font-size:13px;line-height:1.7;color:#ccc"></div>
+    </div>
+    <div id="verdict-box"></div>
+  </div>
+
+  <!-- SLACK -->
+  <div class="slack-wrap" id="slack-wrap">
+    <div class="card-title">Post para o Slack</div>
+    <div class="slack-preview" id="slack-preview"></div>
+    <button class="btn-copy" id="btn-copy" onclick="copiarSlack()">
+      <span>📋</span><span id="copy-txt">Copiar para o Slack</span>
+    </button>
+  </div>
+
+  <!-- LOG DE CANDIDATOS -->
+  <button class="btn-toggle-log" onclick="toggleLog()">
+    <span>📋</span>
+    <span id="log-toggle-txt">Ver Histórico de Candidatos</span>
+    <span id="log-toggle-count" style="background:#E0E0E0;border-radius:20px;padding:2px 10px;font-size:12px;min-width:24px;display:inline-block;text-align:center"></span>
+  </button>
+
+  <div class="log-section" id="log-section">
+    <div class="card">
+      <div class="log-header">
+        <div class="card-title" style="margin-bottom:0">Histórico de Candidatos</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="log-count" id="log-count">0 candidatos</span>
+          <button class="btn-clear-log" onclick="clearLog()">Limpar tudo</button>
+        </div>
+      </div>
+      <div id="log-list"><div class="log-empty">Nenhum candidato avaliado ainda.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── GABARITOS ───────────────────────────────────────────────
+const GAB = {
+  perfil: {
+    respostas: ['A','B','B','D','C','A','B','A','A','A','A','A','A','A','A'],
+    blocos: ['Responsabilidade','Responsabilidade','Responsabilidade','Responsabilidade','Responsabilidade',
+             'Organização','Organização','Organização','Organização','Organização',
+             'Comprometimento','Comprometimento','Comprometimento','Comprometimento','Comprometimento'],
+    nomesBlocos: ['Responsabilidade','Organização','Comprometimento'],
+    insights: {
+      // Q index -> o que cada resposta (A/B/C/D) diz
+      0: {A:'Proativo e comunicativo',B:'Responsável, mas reativo',C:'Esforçado, sem comunicação',D:'Passivo'},
+      1: {A:'Autossuficiente (risco de ocultar)',B:'Transparência e integridade',C:'Prudente, mas omisso',D:'Busca apoio (pode ser insegurança)'},
+      2: {A:'Dedicado demais (sem planejar)',B:'Comunica e propõe solução',C:'Independente, sem comunicação',D:'Honesto, falta proatividade'},
+      3: {A:'Proativo, pode errar',B:'Muito cauteloso',C:'Impulsivo',D:'Comunicação assertiva'},
+      4: {A:'Direto (pouco colaborativo)',B:'Muito flexível (risco sobrecarga)',C:'Equilíbrio honestidade/colaboração',D:'Indeciso'},
+      5: {A:'Organização constante',B:'Prático, gera desordem',C:'Procrastina organização',D:'Delega, falta senso coletivo'},
+      6: {A:'Eficiente, pode perder urgências',B:'Alinha prioridades antes de agir',C:'Energia dispersa',D:'Estratégico, pode atrasar'},
+      7: {A:'Organização contínua',B:'Disciplinado, fecha o dia',C:'Reativo, depende de estímulo',D:'Metódico, bagunça turno seguinte'},
+      8: {A:'Proativo, senso de dono',B:'Dentro dos limites',C:'Registra, adia ação',D:'Busca apoio, dilui responsabilidade'},
+      9: {A:'Planejamento completo',B:'Confia em si (pode ser arriscado)',C:'Depende de terceiros',D:'Confiante, não adapta rotina'},
+      10:{A:'Maturidade, aprende antes de decidir',B:'Comunicativo, busca solução interna',C:'Resiliente e realista',D:'Honesto, pode comprometer engajamento'},
+      11:{A:'Aprende com autonomia',B:'Prudente, aprende com suporte',C:'Honesto sobre limitações',D:'Comprometimento com qualidade'},
+      12:{A:'Proativo, além do mínimo',B:'Responsável, pouco proativo',C:'Vê tempo livre como mérito',D:'Espírito de equipe'},
+      13:{A:'Equilíbrio empatia/limite',B:'Muito prestativo',C:'Boa intenção, pode criar problema',D:'Claro nos limites, pode parecer frio'},
+      14:{A:'Aberto ao desenvolvimento',B:'Processa com calma',C:'Pensamento crítico ou insegurança',D:'Aceita, mas pode não aplicar'},
+    }
+  },
+  tecnica: {
+    respostas: ['B','B','C','B','C','C','C','C','B','A','C','C','B','A','C'],
+    blocos: ['Identificação','Identificação','Identificação','Identificação','Identificação',
+             'Conhecimentos','Conhecimentos','Conhecimentos','Conhecimentos','Conhecimentos',
+             'Segurança','Segurança','Segurança','Segurança','Segurança'],
+    nomesBlocos: ['Identificação','Conhecimentos','Segurança & Práticas'],
+    insights: null
+  }
+};
+
+// ─── STATE ───────────────────────────────────────────────────
+let provaAtual = 'perfil';
+let respostas = new Array(15).fill(null);
+let decisao = null;
+
+// ─── RENDERIZAR QUESTÕES ─────────────────────────────────────
+function renderQuestions() {
+  respostas = new Array(15).fill(null);
+  const grid = document.getElementById('questions-grid');
+  const gab = GAB[provaAtual];
+  let html = '';
+  for (let i = 0; i < 15; i++) {
+    const bloco = gab.blocos[i];
+    const blocoIdx = gab.nomesBlocos.indexOf(bloco);
+    const colors = ['#2EC2FF','#22C55E','#F59E0B'];
+    const c = colors[blocoIdx] || '#888';
+    html += `<div class="q-item">
+      <div class="q-num" style="color:${c}">Q${String(i+1).padStart(2,'0')} · ${bloco.substring(0,3).toUpperCase()}</div>
+      <div class="q-opts">
+        ${['A','B','C','D'].map(l => `<div class="q-opt" id="q${i}_${l}" onclick="selectResp(${i},'${l}')">${l}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function selectResp(qIdx, letra) {
+  respostas[qIdx] = letra;
+  ['A','B','C','D'].forEach(l => {
+    const el = document.getElementById(`q${qIdx}_${l}`);
+    if (el) el.classList.toggle('selected', l === letra);
+  });
+}
+
+function setProva(tipo) {
+  provaAtual = tipo;
+  document.getElementById('btn-perfil').classList.toggle('active', tipo === 'perfil');
+  document.getElementById('btn-tecnica').classList.toggle('active', tipo === 'tecnica');
+  renderQuestions();
+  document.getElementById('result-card').classList.remove('show');
+  document.getElementById('slack-wrap').classList.remove('show');
+}
+
+function setDecisao(d) {
+  decisao = d;
+  document.getElementById('btn-aprov').classList.toggle('active', d === 'aprovado');
+  document.getElementById('btn-reprov').classList.toggle('active', d === 'reprovado');
+}
+
+// ─── CALCULAR ────────────────────────────────────────────────
+function calcular() {
+  const gab = GAB[provaAtual];
+  const blocos = gab.nomesBlocos;
+  const scores = blocos.map(() => ({acertos: 0, total: 5, erradas: []}));
+
+  respostas.forEach((resp, i) => {
+    const blocoIdx = Math.floor(i / 5);
+    if (resp === gab.respostas[i]) {
+      scores[blocoIdx].acertos++;
+    } else {
+      scores[blocoIdx].erradas.push({q: i+1, resp: resp || '—', correta: gab.respostas[i]});
+    }
+  });
+
+  const total = scores.reduce((s, b) => s + b.acertos, 0);
+  return { scores, total, blocos };
+}
+
+// ─── PERFIL INSIGHTS (só prova de perfil) ────────────────────
+function buildProfileInsights(scores) {
+  const gab = GAB.perfil;
+  const tags = [];
+  const textos = [];
+
+  const [resp, org, comp] = scores.map(s => s.acertos);
+
+  // Tags por bloco
+  if (resp >= 4) tags.push({txt:'Responsabilidade sólida', tipo:'green'});
+  else if (resp === 3) tags.push({txt:'Responsabilidade razoável', tipo:'amber'});
+  else tags.push({txt:'Responsabilidade a desenvolver', tipo:'red'});
+
+  if (org >= 4) tags.push({txt:'Bem organizado', tipo:'green'});
+  else if (org === 3) tags.push({txt:'Organização mediana', tipo:'amber'});
+  else tags.push({txt:'Desorganização preocupante', tipo:'red'});
+
+  if (comp >= 4) tags.push({txt:'Alto comprometimento', tipo:'green'});
+  else if (comp === 3) tags.push({txt:'Comprometimento moderado', tipo:'amber'});
+  else tags.push({txt:'Baixo engajamento', tipo:'red'});
+
+  // Análise das respostas erradas — o que revelam
+  respostas.forEach((resp, i) => {
+    const correta = gab.respostas[i];
+    if (resp && resp !== correta && gab.insights[i] && gab.insights[i][resp]) {
+      textos.push(`• Q${i+1}: respondeu <strong>${resp}</strong> → <em>${gab.insights[i][resp]}</em>`);
+    }
+  });
+
+  // Padrão geral
+  const total = scores.reduce((s,b) => s + b.acertos, 0);
+  let perfil = '';
+  if (total >= 13) perfil = 'Candidato com perfil excelente. Demonstra maturidade, proatividade e senso de responsabilidade acima da média para alguém sem experiência.';
+  else if (total >= 11) perfil = 'Perfil muito bom. Apresenta boas atitudes na maioria das situações com pequenos pontos de desenvolvimento.';
+  else if (total >= 9) perfil = 'Perfil adequado para a vaga. Tem potencial mas precisará de acompanhamento próximo no início.';
+  else if (total >= 7) perfil = 'Perfil com ressalvas. Alguns padrões comportamentais merecem atenção antes de uma decisão definitiva.';
+  else perfil = 'Perfil preocupante para a vaga. Respostas indicam possível dificuldade de adaptação ao ambiente de trabalho.';
+
+  return { tags, textos, perfil };
+}
+
+function buildTechInsights(scores) {
+  const tags = [];
+  const [id, con, seg] = scores.map(s => s.acertos);
+
+  if (id >= 4) tags.push({txt:'Boa identificação de ferramentas', tipo:'green'});
+  else if (id === 3) tags.push({txt:'Identifica ferramentas básicas', tipo:'amber'});
+  else tags.push({txt:'Dificuldade em identificar ferramentas', tipo:'red'});
+
+  if (con >= 4) tags.push({txt:'Conhecimento técnico sólido', tipo:'green'});
+  else if (con === 3) tags.push({txt:'Conhecimento técnico razoável', tipo:'amber'});
+  else tags.push({txt:'Conhecimento técnico insuficiente', tipo:'red'});
+
+  if (seg >= 4) tags.push({txt:'Boa consciência de segurança', tipo:'green'});
+  else if (seg === 3) tags.push({txt:'Segurança a reforçar', tipo:'amber'});
+  else tags.push({txt:'Segurança preocupante', tipo:'red'});
+
+  const total = scores.reduce((s,b) => s + b.acertos, 0);
+  let perfil = '';
+  if (total >= 13) perfil = 'Excelente nível técnico. Candidato demonstra domínio claro das ferramentas, do sistema elétrico de motos e das práticas de segurança.';
+  else if (total >= 11) perfil = 'Bom nível técnico. Tem base sólida com pequenas lacunas que podem ser rapidamente corrigidas.';
+  else if (total >= 9) perfil = 'Nível técnico suficiente. Aprovado no mínimo exigido, mas recomenda-se acompanhamento nos pontos com erro.';
+  else perfil = 'Nível técnico abaixo do esperado para mecânico experiente. Revisar os conceitos antes de iniciar na função.';
+
+  return { tags, textos: [], perfil };
+}
+
+// ─── GERAR ANÁLISE ───────────────────────────────────────────
+function gerar() {
+  if (!document.getElementById('avaliador').value) {
+    alert('Selecione o avaliador responsável.');
+    document.getElementById('avaliador').focus();
+    return;
+  }
+  const preenchidas = respostas.filter(r => r !== null).length;
+  if (preenchidas < 15) {
+    alert(`Preencha todas as 15 respostas! (${preenchidas}/15 preenchidas)`);
+    return;
+  }
+  if (!decisao) { alert('Defina a decisão: Aprovado ou Reprovado.'); return; }
+
+  const { scores, total, blocos } = calcular();
+  const pct = Math.round((total/15)*100);
+  const insights = provaAtual === 'perfil' ? buildProfileInsights(scores) : buildTechInsights(scores);
+
+  // Score boxes
+  const scoreClass = total >= 12 ? 'ok' : total >= 9 ? 'warn' : 'bad';
+  document.getElementById('score-row').innerHTML = `
+    <div class="score-box"><div class="score-num ${scoreClass}">${total}/15</div><div class="score-lbl">Total</div></div>
+    <div class="score-box"><div class="score-num ${scoreClass}">${pct}%</div><div class="score-lbl">Aproveitamento</div></div>
+    <div class="score-box"><div class="score-num ${pct>=60?'ok':'bad'}">${pct>=60?'✓ Acima':'✗ Abaixo'}</div><div class="score-lbl">do mínimo (60%)</div></div>
+  `;
+
+  // Barras
+  const barColors = ['#2EC2FF','#22C55E','#F59E0B'];
+  document.getElementById('bars').innerHTML = scores.map((s, i) => {
+    const pctB = Math.round((s.acertos/5)*100);
+    const c = s.acertos >= 4 ? '#22C55E' : s.acertos === 3 ? '#F59E0B' : '#EF4444';
+    return `<div class="bar-row">
+      <div class="bar-label">${blocos[i]}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pctB}%;background:${c}"></div></div>
+      <div class="bar-score">${s.acertos}/5</div>
+    </div>`;
+  }).join('');
+
+  // Tags
+  document.getElementById('tags').innerHTML = insights.tags.map(t =>
+    `<span class="insight-tag tag-${t.tipo}">${t.tipo==='green'?'✓':t.tipo==='amber'?'△':'✗'} ${t.txt}</span>`
+  ).join('');
+
+  // Análise
+  let analiseHtml = `<p style="margin-bottom:10px">${insights.perfil}</p>`;
+  if (insights.textos.length) {
+    analiseHtml += `<p style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:6px">Padrões identificados nas respostas:</p>`;
+    analiseHtml += insights.textos.map(t => `<p style="margin-bottom:4px">${t}</p>`).join('');
+  }
+  document.getElementById('analise').innerHTML = analiseHtml;
+
+  // Verdict
+  const vCls = decisao === 'aprovado' ? 'aprovado' : 'reprovado';
+  const vIcon = decisao === 'aprovado' ? '✅' : '❌';
+  const vTxt = decisao === 'aprovado' ? 'APROVADO' : 'REPROVADO';
+  document.getElementById('verdict-box').innerHTML = `
+    <div class="verdict ${vCls}">
+      <span class="v-icon">${vIcon}</span>
+      <span class="v-text">${vTxt}</span>
+    </div>`;
+
+  document.getElementById('result-card').classList.add('show');
+
+  // Gerar post Slack
+  gerarSlack(scores, total, pct, insights);
+  document.getElementById('slack-wrap').classList.add('show');
+  document.getElementById('result-card').scrollIntoView({behavior:'smooth', block:'start'});
+
+  // Salvar no log
+  salvarNoLog(scores, total, pct, insights);
+}
+
+// ─── GERAR POST SLACK ────────────────────────────────────────
+function gerarSlack(scores, total, pct, insights) {
+  const avaliador = document.getElementById('avaliador').value || '—';
+  const nome = document.getElementById('nome').value.trim() || 'Não informado';
+  const wpp = document.getElementById('wpp').value.trim() || '—';
+  const email = document.getElementById('email').value.trim() || '—';
+  const turno = document.getElementById('turno').value || '—';
+  const base = document.getElementById('base').value || '—';
+  const obs = document.getElementById('obs').value.trim();
+  const gab = GAB[provaAtual];
+  const tipoProva = provaAtual === 'perfil' ? 'Avaliação de Perfil (Sem Experiência)' : 'Prova Técnica (Mecânico Experiente)';
+  const emoji = decisao === 'aprovado' ? '✅' : '❌';
+  const decisaoTxt = decisao === 'aprovado' ? 'APROVADO' : 'REPROVADO';
+  const statusEmoji = pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴';
+
+  const blocoLinhas = scores.map((s, i) => {
+    const e = s.acertos >= 4 ? '🟢' : s.acertos >= 3 ? '🟡' : '🔴';
+    return `   ${e} ${gab.nomesBlocos[i]}: ${s.acertos}/5`;
+  }).join('\n');
+
+  const tagsTexto = insights.tags.map(t => {
+    const e = t.tipo==='green'?'✅':t.tipo==='amber'?'⚠️':'🔴';
+    return `   ${e} ${t.txt}`;
+  }).join('\n');
+
+  let post = `🏍️ *VAMMO — RESULTADO DE ENTREVISTA*\n`;
+  post += `${'─'.repeat(40)}\n`;
+  post += `Avaliado por: *${avaliador}*\n\n`;
+  post += `*👤 CANDIDATO*\n`;
+  post += `   Nome: *${nome}*\n`;
+  post += `   WhatsApp: ${wpp}\n`;
+  post += `   E-mail: ${email}\n\n`;
+  post += `*📋 VAGA*\n`;
+  post += `   Turno: ${turno} · Base: ${base}\n`;
+  post += `   Prova: ${tipoProva}\n\n`;
+  post += `*📊 RESULTADO*\n`;
+  post += `   ${statusEmoji} Nota: *${total}/15 (${pct}%)*\n\n`;
+  post += `${blocoLinhas}\n\n`;
+  post += `*🔍 PERFIL*\n`;
+  post += `${tagsTexto}\n\n`;
+  post += `   ${insights.perfil}\n`;
+  if (obs) { post += `\n*📝 OBSERVAÇÕES*\n   ${obs}\n`; }
+  post += `\n${'─'.repeat(40)}\n`;
+  post += `${emoji} *DECISÃO: ${decisaoTxt}*`;
+
+  // Renderiza no preview (com negrito visual)
+  const previewEl = document.getElementById('slack-preview');
+  previewEl.innerHTML = post.replace(/\*(.*?)\*/g, '<b>$1</b>');
+  previewEl.dataset.raw = post;
+}
+
+function copiarSlack() {
+  const raw = document.getElementById('slack-preview').dataset.raw;
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.getElementById('btn-copy');
+    const txt = document.getElementById('copy-txt');
+    btn.classList.add('copied');
+    txt.textContent = 'Copiado! ✓';
+    setTimeout(() => { btn.classList.remove('copied'); txt.textContent = 'Copiar para o Slack'; }, 2500);
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+renderQuestions();
+loadLog();
+atualizarLinkConfig();
+carregarAvaliadores();
+
+// ─── AVALIADORES ─────────────────────────────────────────────
+const AVALIADORES_BASE = ['Henrique', 'Ronaldo', 'Luciano'];
+const AVALIADORES_STORAGE = 'vammo-avaliadores-extras';
+
+function getAvaliadoresExtras() {
+  try {
+    const stored = localStorage.getItem(AVALIADORES_STORAGE);
+    return stored ? JSON.parse(stored) : [];
+  } catch(e) { return []; }
+}
+
+function carregarAvaliadores() {
+  const extras = getAvaliadoresExtras();
+  const todos = [...AVALIADORES_BASE, ...extras];
+  const sel = document.getElementById('avaliador');
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="">Selecione quem está avaliando...</option>' +
+    todos.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (valorAtual && todos.includes(valorAtual)) sel.value = valorAtual;
+}
+
+function adicionarAvaliador() {
+  const nome = prompt('Nome do novo avaliador:');
+  if (!nome) return;
+  const trimmed = nome.trim();
+  if (!trimmed) return;
+
+  const extras = getAvaliadoresExtras();
+  const todos = [...AVALIADORES_BASE, ...extras];
+  if (todos.some(n => n.toLowerCase() === trimmed.toLowerCase())) {
+    alert(`"${trimmed}" já está na lista.`);
+    document.getElementById('avaliador').value = todos.find(n => n.toLowerCase() === trimmed.toLowerCase());
+    return;
+  }
+
+  extras.push(trimmed);
+  localStorage.setItem(AVALIADORES_STORAGE, JSON.stringify(extras));
+  carregarAvaliadores();
+  document.getElementById('avaliador').value = trimmed;
+}
+
+// ─── IMPORTAÇÃO POR FOTO (Gemini Vision) ─────────────────────
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const API_KEY_STORAGE = 'vammo-gemini-key';
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE);
+}
+
+function atualizarLinkConfig() {
+  document.getElementById('config-link').style.display = getApiKey() ? 'inline' : 'none';
+}
+
+function iniciarFoto() {
+  if (!getApiKey()) {
+    document.getElementById('api-key-setup').classList.add('show');
+    setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+    return;
+  }
+  document.getElementById('photo-input').click();
+}
+
+function salvarApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('AIza') || key.length < 30) {
+    alert('Chave inválida. Cole a chave completa do Google AI Studio (começa com "AIza").');
+    return;
+  }
+  localStorage.setItem(API_KEY_STORAGE, key);
+  document.getElementById('api-key-setup').classList.remove('show');
+  document.getElementById('api-key-input').value = '';
+  atualizarLinkConfig();
+  document.getElementById('photo-input').click();
+}
+
+function cancelarApiKey() {
+  document.getElementById('api-key-setup').classList.remove('show');
+  document.getElementById('api-key-input').value = '';
+}
+
+function resetApiKey() {
+  if (!confirm('Trocar a chave de API do Google AI Studio?')) return;
+  localStorage.removeItem(API_KEY_STORAGE);
+  atualizarLinkConfig();
+  document.getElementById('api-key-setup').classList.add('show');
+  setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+}
+
+function setStatus(msg, tipo) {
+  const el = document.getElementById('photo-status');
+  el.className = 'photo-status ' + (tipo || '');
+  el.innerHTML = tipo === 'loading' ? `<span class="spinner"></span>${msg}` : msg;
+}
+
+async function processarFoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  setStatus('Otimizando imagem...', 'loading');
+
+  try {
+    const { base64, mimeType } = await comprimirImagem(file);
+    setStatus('Analisando com IA (5-15s)...', 'loading');
+    const dados = await chamarGemini(base64, mimeType);
+    const preenchidos = preencherForm(dados);
+    setStatus(`✓ ${preenchidos.respostas}/15 respostas detectadas. Revise os campos antes de gerar a análise.`, 'success');
+  } catch (err) {
+    console.error(err);
+    setStatus(`✗ ${err.message}`, 'error');
+  }
+
+  event.target.value = '';
+}
+
+function comprimirImagem(file, maxDim = 1600) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        if (!blob) return reject(new Error('Falha ao processar imagem'));
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+          base64: reader.result.split(',')[1],
+          mimeType: 'image/jpeg'
+        });
+        reader.onerror = () => reject(new Error('Falha ao ler imagem'));
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => reject(new Error('Imagem inválida'));
+    img.src = url;
+  });
+}
+
+async function chamarGemini(base64, mimeType) {
+  const key = getApiKey();
+  const isPerfil = provaAtual === 'perfil';
+  const blocosTxt = isPerfil
+    ? 'Responsabilidade (Q01-Q05), Organização (Q06-Q10), Comprometimento (Q11-Q15)'
+    : 'Identificação (Q01-Q05), Conhecimentos (Q06-Q10), Segurança (Q11-Q15)';
+
+  const prompt = `Você é um assistente que extrai dados de uma folha física de avaliação da Vammo (motofretes).
+
+CONTEXTO:
+- Tipo: ${isPerfil ? 'AVALIAÇÃO DE PERFIL' : 'PROVA TÉCNICA'}
+- 15 questões em 3 blocos: ${blocosTxt}
+- Cada questão tem 4 alternativas (A, B, C, D) com bolinhas circulares
+- A bolinha PREENCHIDA/ESCURA (●) indica a resposta marcada
+- Bolinhas vazias (○) NÃO foram escolhidas
+
+ESTRUTURA DA FOLHA:
+1. CABEÇALHO MANUSCRITO: Nome do candidato, Data, WhatsApp, E-mail
+2. 3 COLUNAS de questões (5 questões por coluna)
+3. RODAPÉ MANUSCRITO (opcional): pode ter Base (Mooca / Osasco / São Bernardo) e Turno (1º Turno / 2º Turno / Ambos)
+
+REGRAS DE EXTRAÇÃO:
+- Para cada uma das 15 questões, identifique APENAS UMA alternativa marcada (a bolinha mais cheia/escura).
+- Se houver rasura ou X cancelando, ignore a marca cancelada.
+- Se nenhuma alternativa estiver claramente marcada, retorne null para aquela questão.
+- Nome: leia exatamente como está manuscrito, mantendo acentos e capitalização correta (não tudo em maiúsculas).
+- WhatsApp: extraia só os dígitos numéricos (sem parênteses, traços, espaços).
+- E-mail: extraia o e-mail completo, em minúsculas.
+- Data: formato DD/MM/AAAA. Se incompleta, retorne null.
+- Base/Turno: só preencha se estiver claramente escrito; normalize para os valores exatos da lista. Se não houver, retorne null.
+
+Responda APENAS com JSON válido (sem markdown, sem \`\`\`, sem texto extra):
+{
+  "nome": string | null,
+  "data": "DD/MM/AAAA" | null,
+  "wpp": string | null,
+  "email": string | null,
+  "base": "Mooca" | "Osasco" | "São Bernardo" | null,
+  "turno": "1º Turno" | "2º Turno" | "Ambos" | null,
+  "respostas": ["A"|"B"|"C"|"D"|null, ... 15 itens]
+}`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mimeType, data: base64 } }
+      ]
+    }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.1
+    }
+  };
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  } catch(e) {
+    throw new Error('Falha de conexão. Verifique sua internet.');
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    if (res.status === 400 && /API key/i.test(errText)) {
+      throw new Error('Chave inválida. Clique em "Trocar chave de API" e cole uma chave válida.');
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Chave inválida ou sem permissão. Reconfigure a chave de API.');
+    }
+    if (res.status === 429) {
+      throw new Error('Limite de requisições por minuto atingido. Aguarde ~1min e tente de novo.');
+    }
+    throw new Error(`API erro ${res.status}: ${errText.slice(0,150) || 'erro desconhecido'}`);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Resposta vazia da IA. Tente outra foto.');
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch(e) {
+    throw new Error('IA não retornou JSON válido. Tente outra foto.');
+  }
+  return parsed;
+}
+
+function preencherForm(dados) {
+  const stats = { respostas: 0 };
+
+  if (dados.nome) document.getElementById('nome').value = dados.nome;
+  if (dados.email) document.getElementById('email').value = dados.email;
+
+  if (dados.wpp) {
+    const digits = String(dados.wpp).replace(/\D/g, '');
+    if (digits.length >= 10) {
+      const ddd = digits.slice(0,2);
+      const resto = digits.slice(2);
+      const meio = resto.length > 8 ? resto.slice(0,5) : resto.slice(0,4);
+      const fim = resto.length > 8 ? resto.slice(5) : resto.slice(4);
+      document.getElementById('wpp').value = `(${ddd}) ${meio}-${fim}`;
+    } else {
+      document.getElementById('wpp').value = digits;
+    }
+  }
+
+  if (dados.turno) {
+    const sel = document.getElementById('turno');
+    const match = [...sel.options].find(o => o.value.toLowerCase() === String(dados.turno).toLowerCase());
+    if (match) sel.value = match.value;
+  }
+
+  if (dados.base) {
+    const sel = document.getElementById('base');
+    const match = [...sel.options].find(o => o.value.toLowerCase() === String(dados.base).toLowerCase());
+    if (match) sel.value = match.value;
+  }
+
+  if (Array.isArray(dados.respostas)) {
+    dados.respostas.forEach((letra, i) => {
+      if (letra && ['A','B','C','D'].includes(letra) && i < 15) {
+        selectResp(i, letra);
+        stats.respostas++;
+      }
+    });
+  }
+
+  return stats;
+}
+
+// ─── LOG / STORAGE ───────────────────────────────────────────
+async function salvarNoLog(scores, total, pct, insights) {
+  const avaliador = document.getElementById('avaliador').value || '—';
+  const nome  = document.getElementById('nome').value.trim() || 'Sem nome';
+  const wpp   = document.getElementById('wpp').value.trim()  || '—';
+  const email = document.getElementById('email').value.trim()|| '—';
+  const turno = document.getElementById('turno').value       || '—';
+  const base  = document.getElementById('base').value        || '—';
+  const obs   = document.getElementById('obs').value.trim();
+  const gab   = GAB[provaAtual];
+
+  const record = {
+    id: Date.now(),
+    ts: new Date().toLocaleString('pt-BR'),
+    avaliador,
+    nome, wpp, email, turno, base, obs,
+    prova: provaAtual,
+    tipoLabel: provaAtual === 'perfil' ? 'Perfil' : 'Técnica',
+    decisao,
+    total, pct,
+    blocos: scores.map((s, i) => ({ nome: gab.nomesBlocos[i], acertos: s.acertos })),
+    tags: insights.tags.map(t => t.txt),
+    perfil: insights.perfil,
+    respostas: [...respostas]
+  };
+
+  try {
+    // Carrega lista atual
+    let lista = [];
+    try {
+      const existing = await window.storage.get('vammo-log');
+      if (existing) lista = JSON.parse(existing.value);
+    } catch(e) {}
+
+    lista.unshift(record); // mais recente no topo
+    await window.storage.set('vammo-log', JSON.stringify(lista));
+    renderLog(lista);
+    updateLogToggleCount(lista.length);
+  } catch(e) {
+    console.error('Storage error:', e);
+  }
+}
+
+async function loadLog() {
+  try {
+    const existing = await window.storage.get('vammo-log');
+    if (existing) {
+      const lista = JSON.parse(existing.value);
+      renderLog(lista);
+      updateLogToggleCount(lista.length);
+    } else {
+      updateLogToggleCount(0);
+    }
+  } catch(e) {
+    updateLogToggleCount(0);
+  }
+}
+
+function updateLogToggleCount(n) {
+  const el = document.getElementById('log-toggle-count');
+  el.textContent = n;
+  el.style.background = n > 0 ? 'rgba(46,194,255,.15)' : '#E0E0E0';
+  el.style.color = n > 0 ? '#0099cc' : '#999';
+}
+
+function renderLog(lista) {
+  const container = document.getElementById('log-list');
+  document.getElementById('log-count').textContent = `${lista.length} candidato${lista.length !== 1 ? 's' : ''}`;
+
+  if (!lista.length) {
+    container.innerHTML = '<div class="log-empty">Nenhum candidato avaliado ainda.</div>';
+    return;
+  }
+
+  container.innerHTML = lista.map((r, idx) => {
+    const decCls  = r.decisao === 'aprovado' ? 'lb-aprov' : 'lb-reprov';
+    const decTxt  = r.decisao === 'aprovado' ? '✓ Aprovado' : '✗ Reprovado';
+    const notaCol = r.pct >= 80 ? '#16A34A' : r.pct >= 60 ? '#D97706' : '#DC2626';
+    const blocoHtml = r.blocos.map(b => {
+      const c = b.acertos >= 4 ? '#16A34A' : b.acertos >= 3 ? '#D97706' : '#DC2626';
+      return `<div class="log-detail-box">
+        <div class="log-detail-num" style="color:${c}">${b.acertos}/5</div>
+        <div class="log-detail-lbl">${b.nome}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="log-item" onclick="toggleDetail(${r.id})">
+      <div class="log-top">
+        <div class="log-nome">${r.nome}</div>
+        <button class="log-del" onclick="deleteEntry(event, ${r.id})" title="Remover">✕</button>
+      </div>
+      <div class="log-badges">
+        <span class="log-badge ${decCls}">${decTxt}</span>
+        <span class="log-badge lb-nota" style="color:${notaCol}">${r.total}/15 · ${r.pct}%</span>
+        <span class="log-badge lb-base">${r.base}</span>
+        <span class="log-badge lb-prova">${r.tipoLabel}</span>
+        ${r.avaliador && r.avaliador !== '—' ? `<span class="log-badge lb-avaliador">👤 ${r.avaliador}</span>` : ''}
+        <span class="log-meta" style="margin-left:auto">${r.ts}</span>
+      </div>
+      <div class="log-detail" id="detail-${r.id}">
+        <div class="log-detail-grid">${blocoHtml}</div>
+        ${r.wpp !== '—' ? `<div style="margin-bottom:3px">📱 <b>${r.wpp}</b>${r.email !== '—' ? ` · ✉️ ${r.email}` : ''}</div>` : ''}
+        ${r.turno !== '—' ? `<div style="margin-bottom:3px">🕐 Turno: <b>${r.turno}</b> · 📍 Base: <b>${r.base}</b></div>` : ''}
+        <div style="margin-top:6px;font-size:11px;color:#888;font-style:italic;line-height:1.5">${r.perfil}</div>
+        ${r.obs ? `<div style="margin-top:6px;background:#F8F8F8;border-radius:6px;padding:8px;font-size:12px;color:#555">📝 ${r.obs}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(`detail-${id}`);
+  if (el) el.classList.toggle('open');
+}
+
+async function deleteEntry(e, id) {
+  e.stopPropagation();
+  if (!confirm('Remover este candidato do histórico?')) return;
+  try {
+    const existing = await window.storage.get('vammo-log');
+    if (!existing) return;
+    let lista = JSON.parse(existing.value).filter(r => r.id !== id);
+    await window.storage.set('vammo-log', JSON.stringify(lista));
+    renderLog(lista);
+    updateLogToggleCount(lista.length);
+  } catch(e) { console.error(e); }
+}
+
+async function clearLog() {
+  if (!confirm('Limpar todo o histórico? Esta ação não pode ser desfeita.')) return;
+  try {
+    await window.storage.delete('vammo-log');
+    renderLog([]);
+    updateLogToggleCount(0);
+  } catch(e) {}
+}
+
+function toggleLog() {
+  const sec = document.getElementById('log-section');
+  const txt = document.getElementById('log-toggle-txt');
+  const open = sec.classList.toggle('open');
+  txt.textContent = open ? 'Ocultar Histórico' : 'Ver Histórico de Candidatos';
+  if (open) sec.scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+</body>
+</html>
