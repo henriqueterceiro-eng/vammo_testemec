@@ -749,9 +749,6 @@ function copiarSlack() {
 
 // ─── INIT ────────────────────────────────────────────────────
 renderQuestions();
-loadLog();
-atualizarLinkConfig();
-carregarAvaliadores();
 
 // ─── AVALIADORES ─────────────────────────────────────────────
 const AVALIADORES_BASE = ['Henrique', 'Ronaldo', 'Luciano'];
@@ -1064,15 +1061,15 @@ async function salvarNoLog(scores, total, pct, insights) {
   };
 
   try {
-    // Carrega lista atual
+    // Carrega lista atual do localStorage
     let lista = [];
     try {
-      const existing = await window.storage.get('vammo-log');
-      if (existing) lista = JSON.parse(existing.value);
+      const stored = localStorage.getItem('vammo-log');
+      if (stored) lista = JSON.parse(stored);
     } catch(e) {}
 
     lista.unshift(record); // mais recente no topo
-    await window.storage.set('vammo-log', JSON.stringify(lista));
+    localStorage.setItem('vammo-log', JSON.stringify(lista));
     renderLog(lista);
     updateLogToggleCount(lista.length);
   } catch(e) {
@@ -1080,11 +1077,11 @@ async function salvarNoLog(scores, total, pct, insights) {
   }
 }
 
-async function loadLog() {
+function loadLog() {
   try {
-    const existing = await window.storage.get('vammo-log');
-    if (existing) {
-      const lista = JSON.parse(existing.value);
+    const stored = localStorage.getItem('vammo-log');
+    if (stored) {
+      const lista = JSON.parse(stored);
       renderLog(lista);
       updateLogToggleCount(lista.length);
     } else {
@@ -1152,23 +1149,23 @@ function toggleDetail(id) {
   if (el) el.classList.toggle('open');
 }
 
-async function deleteEntry(e, id) {
+function deleteEntry(e, id) {
   e.stopPropagation();
   if (!confirm('Remover este candidato do histórico?')) return;
   try {
-    const existing = await window.storage.get('vammo-log');
-    if (!existing) return;
-    let lista = JSON.parse(existing.value).filter(r => r.id !== id);
-    await window.storage.set('vammo-log', JSON.stringify(lista));
+    const stored = localStorage.getItem('vammo-log');
+    if (!stored) return;
+    const lista = JSON.parse(stored).filter(r => r.id !== id);
+    localStorage.setItem('vammo-log', JSON.stringify(lista));
     renderLog(lista);
     updateLogToggleCount(lista.length);
   } catch(e) { console.error(e); }
 }
 
-async function clearLog() {
+function clearLog() {
   if (!confirm('Limpar todo o histórico? Esta ação não pode ser desfeita.')) return;
   try {
-    await window.storage.delete('vammo-log');
+    localStorage.removeItem('vammo-log');
     renderLog([]);
     updateLogToggleCount(0);
   } catch(e) {}
@@ -1181,6 +1178,11 @@ function toggleLog() {
   txt.textContent = open ? 'Ocultar Histórico' : 'Ver Histórico de Candidatos';
   if (open) sec.scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+// ─── INIT FINAL (após todas as constantes serem declaradas) ──
+loadLog();
+atualizarLinkConfig();
+carregarAvaliadores();
 </script>
 </body>
 </html>
