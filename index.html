@@ -954,14 +954,39 @@ Responda APENAS com JSON válido (sem markdown, sem \`\`\`, sem texto extra):
   };
 
   let res;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  } catch(e) {
-    throw new Error('Falha de conexão. Verifique sua internet.');
+  let ultimoErro = '';
+  const MAX_TENTATIVAS = 3;
+
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch(e) {
+      if (tentativa < MAX_TENTATIVAS) {
+        setStatus(`Falha de rede. Tentando novamente (${tentativa+1}/${MAX_TENTATIVAS})...`, 'loading');
+        await new Promise(r => setTimeout(r, tentativa * 2000));
+        continue;
+      }
+      throw new Error('Falha de conexão. Verifique sua internet.');
+    }
+
+    // 5xx = servidor sobrecarregado → retry com backoff
+    if (res.status >= 500 && res.status < 600) {
+      ultimoErro = `Servidor Google sobrecarregado (${res.status})`;
+      if (tentativa < MAX_TENTATIVAS) {
+        const espera = tentativa * 3;
+        setStatus(`Servidor Google ocupado. Tentando de novo em ${espera}s (${tentativa+1}/${MAX_TENTATIVAS})...`, 'loading');
+        await new Promise(r => setTimeout(r, espera * 1000));
+        continue;
+      }
+      throw new Error(`${ultimoErro}. Tente de novo em 1-2min.`);
+    }
+
+    // 4xx ou 2xx → não tem retry, sai do loop
+    break;
   }
 
   if (!res.ok) {
